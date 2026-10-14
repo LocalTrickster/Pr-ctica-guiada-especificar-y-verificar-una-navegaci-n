@@ -7,6 +7,12 @@ export interface GridMap {
   readonly width: number;
   readonly height: number;
   readonly blocked: ReadonlySet<string>;
+  readonly entryCosts: ReadonlyMap<string, number>;
+}
+
+export interface GridCellEntryCost {
+  readonly point: GridPoint;
+  readonly cost: number;
 }
 
 export function cellKey(point: GridPoint): string {
@@ -17,6 +23,7 @@ export function createGridMap(
   width: number,
   height: number,
   blockedCells: Iterable<GridPoint>,
+  entryCosts: Iterable<GridCellEntryCost> = [],
 ): GridMap {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) {
     throw new Error("Grid dimensions must be positive integers.");
@@ -30,7 +37,34 @@ export function createGridMap(
     blocked.add(cellKey(point));
   }
 
-  return { width, height, blocked };
+  const costs = new Map<string, number>();
+  for (const { point, cost } of entryCosts) {
+    const key = cellKey(point);
+    if (!isInside({ width, height }, point) || blocked.has(key)) {
+      throw new Error(`Entry cost cell must be walkable and inside the grid: ${key}.`);
+    }
+    if (!Number.isFinite(cost) || cost <= 0) {
+      throw new Error(`Entry cost must be finite and positive for cell ${key}.`);
+    }
+    if (costs.has(key)) {
+      throw new Error(`Entry cost is configured more than once for cell ${key}.`);
+    }
+    costs.set(key, cost);
+  }
+
+  return { width, height, blocked, entryCosts: costs };
+}
+
+export function cellEntryCost(map: GridMap, point: GridPoint): number {
+  return map.entryCosts.get(cellKey(point)) ?? 1;
+}
+
+export function minimumCellEntryCost(map: GridMap): number {
+  let minimum = 1;
+  for (const cost of map.entryCosts.values()) {
+    minimum = Math.min(minimum, cost);
+  }
+  return minimum;
 }
 
 export function isInside(

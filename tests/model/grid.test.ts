@@ -43,6 +43,15 @@ describe("grid map", () => {
     );
   });
 
+  it("requires entry costs to be positive and assigned to walkable cells", () => {
+    expect(() => createGridMap(2, 2, [], [
+      { point: { x: 1, y: 1 }, cost: 0 },
+    ])).toThrow("finite and positive");
+    expect(() => createGridMap(2, 2, [{ x: 1, y: 1 }], [
+      { point: { x: 1, y: 1 }, cost: 5 },
+    ])).toThrow("walkable and inside");
+  });
+
   it("rejects invalid tile sizes and world coordinates", () => {
     expect(() => cellCenter({ x: 0, y: 0 }, 0)).toThrow("Tile size");
     expect(() => worldToCell({ x: Number.NaN, y: 0 }, TILE_SIZE)).toThrow(

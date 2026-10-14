@@ -1,4 +1,11 @@
-import { cellKey, isWalkable, type GridMap, type GridPoint } from "../model/grid";
+import {
+  cellEntryCost,
+  cellKey,
+  isWalkable,
+  minimumCellEntryCost,
+  type GridMap,
+  type GridPoint,
+} from "../model/grid";
 import { manhattanDistance, walkableNeighbors } from "./gridGraph";
 
 export type SearchAlgorithm = "bfs" | "astar";
@@ -68,11 +75,17 @@ export function findPathAStar(map: GridMap, start: GridPoint, goal: GridPoint): 
   }
 
   let insertionOrder = 0;
+  const minimumEntryCost = minimumCellEntryCost(map);
   const startKey = cellKey(start);
   const frontier = new Map<string, AStarNode>([
     [
       startKey,
-      { point: start, cost: 0, heuristic: manhattanDistance(start, goal), order: insertionOrder },
+      {
+        point: start,
+        cost: 0,
+        heuristic: manhattanDistance(start, goal) * minimumEntryCost,
+        order: insertionOrder,
+      },
     ],
   ]);
   const bestCosts = new Map<string, number>([[startKey, 0]]);
@@ -89,7 +102,15 @@ export function findPathAStar(map: GridMap, start: GridPoint, goal: GridPoint): 
     explored.push(current.point);
 
     if (samePoint(current.point, goal)) {
-      return successResult("astar", start, goal, parents, explored, maximumFrontier);
+      return successResult(
+        "astar",
+        start,
+        goal,
+        parents,
+        explored,
+        maximumFrontier,
+        current.cost,
+      );
     }
 
     for (const neighbor of walkableNeighbors(map, current.point)) {
@@ -98,7 +119,7 @@ export function findPathAStar(map: GridMap, start: GridPoint, goal: GridPoint): 
         continue;
       }
 
-      const candidateCost = current.cost + 1;
+      const candidateCost = current.cost + cellEntryCost(map, neighbor);
       const knownCost = bestCosts.get(neighborKey);
       if (knownCost === undefined || candidateCost < knownCost) {
         insertionOrder += 1;
@@ -107,7 +128,7 @@ export function findPathAStar(map: GridMap, start: GridPoint, goal: GridPoint): 
         frontier.set(neighborKey, {
           point: neighbor,
           cost: candidateCost,
-          heuristic: manhattanDistance(neighbor, goal),
+          heuristic: manhattanDistance(neighbor, goal) * minimumEntryCost,
           order: insertionOrder,
         });
       }
@@ -167,13 +188,14 @@ function successResult(
   parents: ReadonlyMap<string, GridPoint>,
   explored: readonly GridPoint[],
   maximumFrontier: number,
+  totalCost?: number,
 ): SearchResult {
   const path = reconstructPath(start, goal, parents);
   return {
     algorithm,
     status: "success",
     path,
-    totalCost: path.length - 1,
+    totalCost: totalCost ?? path.length - 1,
     expandedNodes: explored.length,
     maximumFrontier,
     explored,

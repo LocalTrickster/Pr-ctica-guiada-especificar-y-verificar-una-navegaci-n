@@ -66,6 +66,40 @@ describe("guard simulation", () => {
     }
   });
 
+  it("uses weighted A* costs for an initial patrol route", () => {
+    const slowTerrainMap = createGridMap(5, 3, [], [
+      { point: { x: 1, y: 1 }, cost: 5 },
+      { point: { x: 2, y: 1 }, cost: 5 },
+      { point: { x: 3, y: 1 }, cost: 5 },
+    ]);
+    const state = initialGuardSimulation(
+      slowTerrainMap,
+      10,
+      { x: 0, y: 1 },
+      [{ x: 4, y: 1 }],
+    );
+
+    expect(state.routeFailed).toBe(false);
+    expect(state.routeResult?.status).toBe("success");
+    expect(state.routeResult?.path.length).toBe(7);
+    expect(state.routeResult?.totalCost).toBe(6);
+    expect(state.routeResult?.path).not.toContainEqual({ x: 2, y: 1 });
+  });
+
+  it("uses unit costs again when the guard receives a map without slow terrain", () => {
+    const unitCostMap = createGridMap(5, 3, []);
+    const state = initialGuardSimulation(
+      unitCostMap,
+      10,
+      { x: 0, y: 1 },
+      [{ x: 4, y: 1 }],
+    );
+
+    expect(state.routeResult?.status).toBe("success");
+    expect(state.routeResult?.path.length).toBe(5);
+    expect(state.routeResult?.totalCost).toBe(4);
+  });
+
   it("keeps an unchanged goal route instead of recalculating every frame", () => {
     const initial = initialGuardSimulation(MAP, 10, { x: 2, y: 1 }, PATROLS);
     const first = advanceGuardSimulation(initial, { ...INPUT, deltaMs: 16 });

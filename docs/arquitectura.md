@@ -67,9 +67,9 @@ guardia-sigilo/
 
 ### Navegación
 
-La cuadrícula forma un grafo implícito de cuatro vecinos transitables. BFS utiliza una cola y sirve como referencia no informada. A* utiliza costo unitario y distancia Manhattan, admisible para este movimiento cardinal.
+La cuadrícula forma un grafo implícito de cuatro vecinos transitables. BFS utiliza una cola y conserva costo unitario. A* suma el costo de entrada positivo de cada celda (por defecto, 1) y usa distancia Manhattan multiplicada por el costo mínimo como heurística admisible para el movimiento cardinal.
 
-Entrada: mapa, inicio y objetivo.
+Entrada: mapa, inicio y objetivo. Los costos de entrada pertenecen al mapa; el costo de inicio no se suma.
 
 Salida: algoritmo, estado, `path`, `totalCost`, `expandedNodes`, `maximumFrontier` y secuencia `explored`. Los estados de fracaso distinguen inicio inválido, objetivo inválido y objetivo inaccesible.
 
